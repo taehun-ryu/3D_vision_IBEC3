@@ -97,7 +97,7 @@ def snap_to_candidates(G_numpy, corner_candidates):
 
     return snapped
 
-def detect_corners(iwe, board_w, board_h, quality=0.1, min_dist=10):
+def detect_corners(iwe, board_w, board_h, quality=0.1, min_dist=10, vis=False):
     gray = cv2.normalize(iwe, None, 0,255, cv2.NORM_MINMAX).astype(np.uint8)
     max_corners =  2 * board_w * board_h
     pts = cv2.goodFeaturesToTrack(gray, maxCorners=max_corners,
@@ -111,15 +111,16 @@ def detect_corners(iwe, board_w, board_h, quality=0.1, min_dist=10):
     ip = initialize_grid(board_w, board_h, corner_candidates)
     G_numpy = optimize_corners(corner_candidates, board_w=board_w, board_h=board_h)
     snapped = snap_to_candidates(G_numpy, corner_candidates)
-    vis = draw_corner_candidates(iwe, corner_candidates, color=(0,0,255))
-    cv2.imshow("Corner candidate", vis)
-    cv2.waitKey(100)
-    vis = draw_corner_candidates(iwe, G_numpy, color=(255,0,0))
-    cv2.imshow("contineous points", vis)
-    cv2.waitKey(100)
-    vis = draw_corner_candidates(iwe, snapped)
-    cv2.imshow("snapped", vis)
-    cv2.waitKey(100)
+    if vis:
+        vis = draw_corner_candidates(iwe, corner_candidates, color=(0,0,255))
+        cv2.imshow("Corner candidate", vis)
+        cv2.waitKey(100)
+        vis = draw_corner_candidates(iwe, G_numpy, color=(255,0,0))
+        cv2.imshow("contineous points", vis)
+        cv2.waitKey(100)
+        vis = draw_corner_candidates(iwe, snapped)
+        cv2.imshow("snapped", vis)
+        cv2.waitKey(100)
     
     return snapped
 
