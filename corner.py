@@ -3,12 +3,8 @@ import os
 import glob
 import cv2
 import numpy as np
-import itertools
 import argparse
 import torch
-import matplotlib.pyplot as plt
-from scipy.spatial.distance import cdist
-from scipy.spatial import cKDTree
 
 def draw_corner_candidates(iwe, corners, radius=3, color=(0,255,0)):
     vis = cv2.cvtColor(iwe, cv2.COLOR_GRAY2BGR)
@@ -28,24 +24,35 @@ def initialize_grid(board_w, board_h, corner_candidates):
 def compute_loss(G, corner_candidates):
     loss = 0.0
     h, w, _ = G.shape
+    eps = 1e-6
 
+    # [1] Spacing Ratio Loss
+    spacing_ratio_loss = 0.0
+    # row direction
     for i in range(h):
-        for j in range(w - 1):
-            d = torch.norm(G[i, j+1] - G[i, j])
-            loss += (d - 20.0)**2
+        for j in range(1, w - 1):
+            a = torch.norm(G[i, j+1] - G[i, j])
+            b = torch.norm(G[i, j] - G[i, j-1])
+            spacing_ratio_loss += ((a / (b + eps) - 1.0) ** 2)
 
+    # column direction
     for j in range(w):
-        for i in range(h - 1):
-            d = torch.norm(G[i+1, j] - G[i, j])
-            loss += (d - 20.0)**2
+        for i in range(1, h - 1):
+            a = torch.norm(G[i+1, j] - G[i, j])
+            b = torch.norm(G[i, j] - G[i-1, j])
+            spacing_ratio_loss += ((a / (b + eps) - 1.0) ** 2)
 
+    loss += spacing_ratio_loss
+
+    # [2] Orthogonality Loss
     for i in range(h - 1):
         for j in range(w - 1):
             a = G[i+1, j] - G[i, j]
             b = G[i, j+1] - G[i, j]
-            cos_angle = torch.dot(a, b) / (torch.norm(a) * torch.norm(b) + 1e-6)
+            cos_angle = torch.dot(a, b) / (torch.norm(a) * torch.norm(b) + eps)
             loss += cos_angle**2
 
+    # [3] Candidate Proximity Loss
     cand = torch.tensor(corner_candidates, dtype=torch.float32)
     G_flat = G.reshape(-1, 2)
     dists = torch.cdist(G_flat, cand)  # shape (16, N)
@@ -104,6 +111,15 @@ def detect_corners(iwe, board_w, board_h, quality=0.1, min_dist=10):
     ip = initialize_grid(board_w, board_h, corner_candidates)
     G_numpy = optimize_corners(corner_candidates, board_w=board_w, board_h=board_h)
     snapped = snap_to_candidates(G_numpy, corner_candidates)
+    vis = draw_corner_candidates(iwe, corner_candidates, color=(0,0,255))
+    cv2.imshow("Corner candidate", vis)
+    cv2.waitKey(100)
+    vis = draw_corner_candidates(iwe, G_numpy, color=(255,0,0))
+    cv2.imshow("contineous points", vis)
+    cv2.waitKey(100)
+    vis = draw_corner_candidates(iwe, snapped)
+    cv2.imshow("snapped", vis)
+    cv2.waitKey(100)
     
     return snapped
 
@@ -156,8 +172,6 @@ def main():
     files = sorted(glob.glob(os.path.join(args.image_dir, "*.*")))
     print("Found {} files".format(len(files)))
     
-    corner_dir = os.path.join(args.image_dir, "corners")
-    os.makedirs(corner_dir, exist_ok=True)
     for fname in files:
         iwe = cv2.imread(fname, cv2.IMREAD_UNCHANGED)
         if iwe is None:
@@ -174,10 +188,11 @@ def main():
         if check_grid_validity(imgp):
             # Visualization
             vis = draw_corner_candidates(iwe, imgp)
-            cv2.imshow("Corners", vis)
-            cv2.waitKey(1000)
+            cv2.imshow("Valid corner", vis)
+            cv2.waitKey(0)
         else:
             print(f"[INVALID] Grid structure too distorted in {fname}")
     cv2.destroyAllWindows()
+
 if __name__ == "__main__":
     main()
