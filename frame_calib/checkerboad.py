@@ -39,6 +39,10 @@ def main():
 
     image_paths = sorted(glob.glob(os.path.join(args.frame_dir, "*.*")))
     print(f"[INFO] Found {len(image_paths)} images")
+    if len(image_paths) > 50:
+        print(f"[INFO] Too many images ({len(image_paths)}), randomly selecting 50 for calibration")
+        np.random.seed(42)  # 재현성 위해 고정
+        image_paths = sorted(np.random.choice(image_paths, size=50, replace=False).tolist())
 
     for i, fname in enumerate(image_paths):
         img = cv2.imread(fname)
