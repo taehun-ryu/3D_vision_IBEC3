@@ -71,8 +71,6 @@ def optimize_corners(corner_candidates, board_w, board_h):
         loss = compute_loss(G, corner_candidates)
         loss.backward()
         optimizer.step()
-        if iter % 20 == 0:
-            print(f"[Iter {iter}] Loss = {loss.item():.2f}")
 
     return G.detach().numpy()
     
@@ -105,7 +103,6 @@ def detect_corners(iwe, board_w, board_h, quality=0.1, min_dist=10, vis=False):
                                   minDistance=min_dist)
 
     if pts is None or len(pts) < board_w * board_h:
-        print("Not enough corners detected.")
         return None
     corner_candidates = pts.reshape(-1,2).astype(np.float32)
     ip = initialize_grid(board_w, board_h, corner_candidates)
@@ -183,7 +180,7 @@ def main():
             h, w = iwe.shape
             image_size = (w, h)
 
-        imgp = detect_corners(iwe, args.board_w, args.board_h)
+        imgp = detect_corners(iwe, args.board_w, args.board_h, vis=True)
         if imgp is None:
             continue
         if check_grid_validity(imgp):
