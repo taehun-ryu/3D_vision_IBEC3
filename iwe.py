@@ -105,7 +105,7 @@ if __name__ == "__main__":
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("path", help="h5 events path")
-    parser.add_argument("--img_size", nargs='+', type=float, default=(260,346))
+    parser.add_argument("--img_size", nargs='+', type=int, default=(260,346))
     args = parser.parse_args()
 
     xs, ys, ts, ps = read_h5_event_components(args.path)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     
     dt = 0.2
     coarse_bin = split_events_time_interval(xs, ys, ts, ps, dt, drop_last=True)
-    packet_size = 30000
+    packet_size = 20000
     #coarse_bin = split_events_fixed_count(xs, ys, ts, ps, packet_size, drop_last=True)
     print("Split into {} bins including {} events".format(len(coarse_bin), len(coarse_bin[0][0])))
 
