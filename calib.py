@@ -6,6 +6,7 @@ import numpy as np
 import argparse
 import torch
 from corner import *
+from viewer import run_calibration_gui
 
 def compute_reprojection_error(objpoints, imgpoints, K, dist, rvecs, tvecs):
     total_error = 0
@@ -23,7 +24,7 @@ def compute_reprojection_error(objpoints, imgpoints, K, dist, rvecs, tvecs):
 
     mean_error = np.sqrt(total_error / total_points)
     return mean_error
-
+    
 def visualize_detected_points(iwe, imgp):
     vis = cv2.cvtColor(iwe, cv2.COLOR_GRAY2BGR)
     for pt in imgp.reshape(-1, 2):
@@ -42,8 +43,7 @@ def visualize_reprojection(iwe, imgp_gt, imgp_proj):
         cv2.line(vis, pt_gt, pt_proj, (255, 255, 255), 1)
     cv2.imshow("Reprojection", vis)
     cv2.waitKey(0)
-
-
+    
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("image_dir", help="Folder of IWE images")
@@ -94,7 +94,7 @@ def main():
             valid_iwes.append(iwe)
         else:
             print(f"[WARNING] Grid structure invalid, skipping {fname}")
-
+    cv2.destroyAllWindows()
     print(f"[SUMMARY] {valid_count} / {len(files)} images passed corner validation.")
 
     if len(imgpoints) == 0:
@@ -121,6 +121,8 @@ def main():
             imgp_proj = imgpoints_proj.reshape(-1, 2).astype(np.float32)
 
             visualize_reprojection(iwe, imgp_gt, imgp_proj)
+        cv2.destroyAllWindows()
+        run_calibration_gui(K, dist, rvecs, tvecs, objpoints, imgpoints, image_size)
 
 if __name__ == "__main__":
     main()
