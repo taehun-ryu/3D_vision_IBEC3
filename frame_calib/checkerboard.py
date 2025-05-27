@@ -2,8 +2,11 @@
 import cv2
 import glob
 import numpy as np
+import sys
 import os
 import argparse
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from viewer import run_calibration_gui
 
 def compute_reprojection_error(objpoints, imgpoints, K, dist, rvecs, tvecs):
     total_error = 0
@@ -92,6 +95,7 @@ def main():
 
     reprojection_error = compute_reprojection_error(objpoints, imgpoints, K, dist, rvecs, tvecs)
     print(f"[INFO] Reprojection error: {reprojection_error:.4f} pixels")
+    run_calibration_gui(K, dist, rvecs, tvecs, objpoints, imgpoints, image_size)
 
 if __name__ == "__main__":
     main()
