@@ -115,7 +115,7 @@ if __name__ == "__main__":
     
     dt = 0.2
     coarse_bin = split_events_time_interval(xs, ys, ts, ps, dt, drop_last=True)
-    packet_size = 20000
+    packet_size = 30000
     #coarse_bin = split_events_fixed_count(xs, ys, ts, ps, packet_size, drop_last=True)
     print("Split into {} bins including {} events".format(len(coarse_bin), len(coarse_bin[0][0])))
 
@@ -133,25 +133,35 @@ if __name__ == "__main__":
     objective = objectives[0]
     argmax = None
     num = 0
+    valid_count = 0
+    skipped_count = 0
+
     for xs, ys, ts, ps in coarse_bin:
         argmax = optimize(xs, ys, ts, ps, warp, objective, numeric_grads=True, init=argmax)
         mag = np.linalg.norm(argmax)
+
         if abs(argmax[0]) < 1 and abs(argmax[1]) < 1 and mag < min_flow_mag:
-            print(f"bin: flow too small ({argmax}-->{mag:.2f}), SKIPED")
+            skipped_count += 1
             continue
+
         loss = objective.evaluate_function(argmax, xs, ys, ts, ps, warp, img_size=img_size)
-        print("flow vector: {}, loss: {}".format(argmax, loss))
+
         if objective.has_derivative:
             argmax = optimize(xs, ys, ts, ps, warp, objective, numeric_grads=False)
             loss_an = objective.evaluate_function(argmax, xs, ys, ts, ps, warp, img_size=img_size)
-            print("   analytical:{}={}".format(argmax, loss_an))
+
         iwe = compute_final_iwe(argmax, xs, ys, ts, ps, warp, img_size)
+
         if metric.evaluate(iwe) < 150000:
-            print("   metric too small, SKIPED")
+            skipped_count += 1
             continue
+
+        valid_count += 1
         num += 1
+        print(f"Finished: valid bins = {valid_count}, skipped bins = {skipped_count}")
         iwes.append((iwe, f"image_{num:04d}.png"))
-    
+
+    # 저장
     now_str = datetime.now().strftime("%Y%m%d_%H%M")
     for iwe, name in iwes:
         save_image(iwe, save_dir=f"./iwe/{now_str}", save_name=name)
