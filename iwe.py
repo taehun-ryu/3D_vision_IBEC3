@@ -113,10 +113,10 @@ if __name__ == "__main__":
     img_size=tuple(args.img_size)
     print("Loaded {} events".format(len(xs)))
     
-    dt = 0.2
-    coarse_bin = split_events_time_interval(xs, ys, ts, ps, dt, drop_last=True)
-    packet_size = 30000
-    #coarse_bin = split_events_fixed_count(xs, ys, ts, ps, packet_size, drop_last=True)
+    dt = 0.1
+    #coarse_bin = split_events_time_interval(xs, ys, ts, ps, dt, drop_last=True)
+    packet_size = 20000
+    coarse_bin = split_events_fixed_count(xs, ys, ts, ps, packet_size, drop_last=True)
     print("Split into {} bins including {} events".format(len(coarse_bin), len(coarse_bin[0][0])))
 
     objectives = [r1_objective(), zhu_timestamp_objective(), variance_objective(), sos_objective(), soe_objective(),
@@ -142,6 +142,7 @@ if __name__ == "__main__":
 
         if abs(argmax[0]) < 1 and abs(argmax[1]) < 1 and mag < min_flow_mag:
             skipped_count += 1
+            print(f"Skipped: [argmax] = {argmax}, mag = {mag}")
             continue
 
         loss = objective.evaluate_function(argmax, xs, ys, ts, ps, warp, img_size=img_size)
@@ -152,13 +153,14 @@ if __name__ == "__main__":
 
         iwe = compute_final_iwe(argmax, xs, ys, ts, ps, warp, img_size)
 
-        if metric.evaluate(iwe) < 150000:
+        if metric.evaluate(iwe) < 85000:
             skipped_count += 1
+            print(f"Skipped: loss = {loss}, metric = {metric.evaluate(iwe)}")
             continue
 
         valid_count += 1
         num += 1
-        print(f"Finished: valid bins = {valid_count}, skipped bins = {skipped_count}")
+        print(f"Valid: loss = {loss:.2f}, metric = {metric.evaluate(iwe):.2f}, num = {num}")
         iwes.append((iwe, f"image_{num:04d}.png"))
 
     # 저장
