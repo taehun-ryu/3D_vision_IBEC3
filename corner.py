@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import argparse
 import torch
+import shutil
 
 def draw_corner_candidates(iwe, corners, radius=3, color=(0,255,0)):
     vis = cv2.cvtColor(iwe, cv2.COLOR_GRAY2BGR)
@@ -183,11 +184,20 @@ def main():
         imgp = detect_corners(iwe, args.board_w, args.board_h, vis=True)
         if imgp is None:
             continue
+        
+        valid_dir = os.path.join(args.image_dir, "valid")
+        os.makedirs(valid_dir, exist_ok=True)
         if check_grid_validity(imgp):
-            # Visualization
             vis = draw_corner_candidates(iwe, imgp)
             cv2.imshow("Valid corner", vis)
-            cv2.waitKey(0)
+            key = cv2.waitKey(0)
+            if key == ord('y'):  # y: yes, valid
+                print(f"[SAVED] {fname} accepted as valid.")
+                basename = os.path.basename(fname)
+                save_path = os.path.join(valid_dir, basename)
+                cv2.imwrite(save_path, vis)
+            else:
+                print(f"[SKIPPED] {fname} rejected by user.")
         else:
             print(f"[INVALID] Grid structure too distorted in {fname}")
     cv2.destroyAllWindows()
