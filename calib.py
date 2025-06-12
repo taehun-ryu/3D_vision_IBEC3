@@ -43,7 +43,14 @@ def visualize_reprojection(iwe, imgp_gt, imgp_proj):
         cv2.line(vis, pt_gt, pt_proj, (255, 255, 255), 1)
     cv2.imshow("Reprojection", vis)
     cv2.waitKey(0)
-    
+
+def undistort_iwe(iwe, K, dist):
+    h, w = iwe.shape
+    new_K, _ = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), alpha=0)
+    undistorted = cv2.undistort(iwe, K, dist, None, new_K)
+    return undistorted
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("image_dir", help="Folder of IWE images")
@@ -119,8 +126,11 @@ def main():
             imgp_gt = imgpoints[i].reshape(-1, 2).astype(np.float32)
             imgpoints_proj, _ = cv2.projectPoints(objpoints[i], rvecs[i], tvecs[i], K, dist)
             imgp_proj = imgpoints_proj.reshape(-1, 2).astype(np.float32)
-
+            undistorted = undistort_iwe(iwe, K, dist)
+            cv2.imshow("Undistorted", undistorted)
+            cv2.waitKey(100)
             visualize_reprojection(iwe, imgp_gt, imgp_proj)
+                
         cv2.destroyAllWindows()
         run_calibration_gui(K, dist, rvecs, tvecs, objpoints, imgpoints, image_size)
 
