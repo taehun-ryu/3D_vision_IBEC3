@@ -195,7 +195,7 @@ def main():
                 print(f"[SAVED] {fname} accepted as valid.")
                 basename = os.path.basename(fname)
                 save_path = os.path.join(valid_dir, basename)
-                cv2.imwrite(save_path, vis)
+                cv2.imwrite(save_path, iwe)
             else:
                 print(f"[SKIPPED] {fname} rejected by user.")
         else:

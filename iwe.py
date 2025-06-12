@@ -114,9 +114,9 @@ if __name__ == "__main__":
     print("Loaded {} events".format(len(xs)))
     
     dt = 0.1
-    #coarse_bin = split_events_time_interval(xs, ys, ts, ps, dt, drop_last=True)
-    packet_size = 20000
-    coarse_bin = split_events_fixed_count(xs, ys, ts, ps, packet_size, drop_last=True)
+    coarse_bin = split_events_time_interval(xs, ys, ts, ps, dt, drop_last=True)
+    packet_size = 30000
+    #coarse_bin = split_events_fixed_count(xs, ys, ts, ps, packet_size, drop_last=True)
     print("Split into {} bins including {} events".format(len(coarse_bin), len(coarse_bin[0][0])))
 
     objectives = [r1_objective(), zhu_timestamp_objective(), variance_objective(), sos_objective(), soe_objective(),
@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
         iwe = compute_final_iwe(argmax, xs, ys, ts, ps, warp, img_size)
 
-        if metric.evaluate(iwe) < 85000:
+        if metric.evaluate(iwe) < 100000:
             skipped_count += 1
             print(f"Skipped: loss = {loss}, metric = {metric.evaluate(iwe)}")
             continue
