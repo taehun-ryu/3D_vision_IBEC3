@@ -18,8 +18,7 @@ class warp_function(ABC):
         pass
 
 # ---------------------------------------------------------------
-# Self-warping functions
-
+# Warping functions
 # ---------------------------------------------------------------
 class linvel_warp(warp_function):
     """
