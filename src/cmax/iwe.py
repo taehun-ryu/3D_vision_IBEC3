@@ -19,7 +19,7 @@ class IweMetric(ABC):
     @abstractmethod
     def evaluate(self, iwe):
         pass
-    
+
 class GradientEnergyMetric(IweMetric):
     def __init__(self):
         super().__init__('gradient_energy')
@@ -81,10 +81,10 @@ def get_valid_iwes(coarse_bin, img_size, vis):
     for xs, ys, ts, ps in coarse_bin:
         argmax = cmax.optimize(xs, ys, ts, ps, warp, objective, numeric_grads=True, init=argmax)
         theta_deg = np.rad2deg(math.atan2(argmax[1], argmax[0]))
-        theta_360 = (theta_deg + 360) % 360 
+        theta_360 = (theta_deg + 360) % 360
         print(f"    [PROGRESS] Bin {valid_count+skipped_count}/{total_num}")
         print(f"        Optimized: vx = {argmax[0]:.2f}, vy = {argmax[1]:.2f}, theta(deg) = {theta_360:.2f}")
-        
+
         # Filtering pure motion
         if is_near_angle(theta_360, target_angles, 15):  #THINK we need to consider relative pose of checkerboard on image plane.
             print("         [SKIPED] One-direction edge")
@@ -104,11 +104,11 @@ def get_valid_iwes(coarse_bin, img_size, vis):
         iwe = cv2.normalize(iwe, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
         # Filtering based on Gradient Energy
-        if metric.evaluate(iwe) < 1000000:
+        if metric.evaluate(iwe) < 1000000:    #THINK Too heuristic?
             print("         [SKIPED] Low Gradient Energy")
             skipped_count +=1
             continue
-        
+
         if vis:
             unwarp_img = compute_final_iwe([0, 0], xs, ys, ts, ps, warp, img_size)
             unwarp_img = cv2.normalize(unwarp_img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
@@ -117,12 +117,13 @@ def get_valid_iwes(coarse_bin, img_size, vis):
             cv2.waitKey(250)
         valid_count += 1
         iwes.append(iwe)
-    cv2.destroyAllWindows()
+    if vis:
+        cv2.destroyAllWindows()
     # Logging
-    acceptance_rate = valid_count/total_num * 100
+    acceptance_rate = valid_count/total_num * 10
     print("[INFO] Optimization Process is done!")
     print(f"        acceptance ratio: {acceptance_rate}%")
     print(f"        #accpeted: {valid_count}, #rejected: {skipped_count}")
     print("************************************************************")
-    
+
     return iwes

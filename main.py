@@ -1,3 +1,6 @@
+import os
+import sys
+
 import numpy as np
 import cv2
 from src.calib.corner import get_valid_corners
@@ -44,12 +47,12 @@ if __name__ == "__main__":
     dt = 0.1
     coarse_bin = split_events_time_interval(xs, ys, ts, ps, dt, drop_last=True)
     print("[INFO] Splited into {} bins including {} events".format(len(coarse_bin), len(coarse_bin[0][0])))
-    
+
     # Contrast Maximization
     iwes = get_valid_iwes(coarse_bin, img_size, vis_iwe)
     if len(iwes) == 0:
         raise RuntimeError("[ERROR] No valid images found. Corner detection aborted.")
-    
+
     # Corner Detection
     used_iwes, imgpoints = get_valid_corners(iwes, board_w, board_h, vis_corner, is_user_selecting)
     if len(imgpoints) == 0:
@@ -70,7 +73,7 @@ if __name__ == "__main__":
         print("     Distortion coefficients:\n", dist.ravel())
     else:
         print("[ERROR] Calibration failed.")
-        
+
     reprojection_error = eval.compute_reprojection_error(objpoints, imgpoints, K, dist, rvecs, tvecs)
     print(f"[INFO] Reprojection error: {reprojection_error:.4f} pixels")
     print("************************************************************")
@@ -84,6 +87,5 @@ if __name__ == "__main__":
             cv2.imshow("Undistorted", undistorted)
             cv2.waitKey(100)
             eval.visualize_reprojection(iwe, imgp_gt, imgp_proj)
-                
         cv2.destroyAllWindows()
         run_calibration_gui(K, dist, rvecs, tvecs, objpoints, imgpoints, img_size)

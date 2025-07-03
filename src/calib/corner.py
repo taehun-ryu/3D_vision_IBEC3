@@ -12,7 +12,7 @@ def draw_corner_candidates(iwe, corners, radius=3, color=(0,255,0)):
 def initialize_grid(board_w, board_h, corner_candidates):
     mean = np.mean(corner_candidates, axis=0)
     std = np.std(corner_candidates, axis=0)
-    
+
     xs = np.linspace(mean[0] - std[0], mean[0] + std[0], board_w)
     ys = np.linspace(mean[1] - std[1], mean[1] + std[1], board_h)
     grid = np.stack(np.meshgrid(xs, ys), axis=-1)  # shape: (h, w, 2)
@@ -69,7 +69,7 @@ def optimize_corners(corner_candidates, board_w, board_h):
         optimizer.step()
 
     return G.detach().numpy()
-    
+
 def snap_to_candidates(G_numpy, corner_candidates):
     from scipy.spatial import cKDTree
 
@@ -117,7 +117,7 @@ def detect_corners(iwe, board_w, board_h, quality=0.1, min_dist=10, vis=False):
         vis = draw_corner_candidates(iwe, snapped)
         cv2.imshow("snapped", vis)
         cv2.waitKey(100)
-    
+
     return snapped
 
 def is_corner_valid(grid: np.ndarray, spacing_tol=0.1, orth_tol=0.2):
@@ -175,9 +175,10 @@ def get_valid_corners(iwes, board_w, board_h, vis, is_user_selecting):
         used_iwes.append(iwe)
         valid_count += 1
         print(f"    [OK] Corners validated and added")
-    cv2.destroyAllWindows()
+    if vis:
+        cv2.destroyAllWindows()
     print("[INFO] Corner detection process is done!")
     print(f"        #accepted: {valid_count}")
     print("************************************************************")
-    
+
     return used_iwes, imgpoints
