@@ -30,7 +30,9 @@ python3 data_format/aedat_to_h5.py /root/dataset/checkerboard.aedat4 --output_di
 ```
 
 ### 3. Run
-Edit [config/calibration.yaml](https://github.com/taehun-ryu/3D_vision_IBEC3/blob/main/config/calibration.yaml) to match your dataset and calibration setup.
+
+Edit [`config/calibration.yaml`](https://github.com/taehun-ryu/3D_vision_IBEC3/blob/main/config/calibration.yaml) to match your dataset and calibration setup:
+
 ```yaml
 path: "/path/to/events.h5"         # Path to input HDF5 event file
 
@@ -47,9 +49,20 @@ visualization:                    # Visualization options
   iwe: false                      # Show IWE (Image of Warped Events)
   corner: false                   # Show detected checkerboard corners
   calib: true                     # Show calibration result (e.g., reprojection)
-
 ```
-Run calibration code
+
+Run the calibration:
 ```bash
 python3 main.py
 ```
+
+> ⚠️**Note:**
+> When visualization is enabled (i.e., any of `visualization.iwe`, `visualization.corner`, or `visualization.calib` is set to `true`),
+> you may encounter repeated Qt-related warnings (e.g., `QObject::moveToThread` or
+> `Could not load the Qt platform plugin "xcb"`).
+> These warnings do not affect the result and can be safely ignored.
+>
+> To suppress them, you can run:
+> ```bash
+> python3 main.py 2>/dev/null
+> ```
