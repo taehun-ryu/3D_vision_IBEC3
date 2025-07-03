@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from event_utils import *
 from abc import ABC, abstractmethod
 
 class warp_function(ABC):

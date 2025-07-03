@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from event_utils import *
 from scipy.ndimage.filters import gaussian_filter
 from abc import ABC, abstractmethod
 

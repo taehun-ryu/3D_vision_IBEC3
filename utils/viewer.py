@@ -6,7 +6,6 @@ import numpy as np
 import cv2
 import sys
 
-
 class CalibrationViewer(QtWidgets.QTabWidget):
     def __init__(self, K, dist, rvecs, tvecs, objpoints, imgpoints, image_size):
         super().__init__()

@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
-import os
-import glob
 import cv2
 import numpy as np
-import argparse
 import torch
-import shutil
 
 def draw_corner_candidates(iwe, corners, radius=3, color=(0,255,0)):
     vis = cv2.cvtColor(iwe, cv2.COLOR_GRAY2BGR)
@@ -27,7 +23,7 @@ def compute_loss(G, corner_candidates):
     h, w, _ = G.shape
     eps = 1e-6
 
-    # [1] Spacing Ratio Loss
+    # Spacing Ratio Loss
     spacing_ratio_loss = 0.0
     # row direction
     for i in range(h):
@@ -45,7 +41,7 @@ def compute_loss(G, corner_candidates):
 
     loss += spacing_ratio_loss
 
-    # [2] Orthogonality Loss
+    # Orthogonality Loss
     for i in range(h - 1):
         for j in range(w - 1):
             a = G[i+1, j] - G[i, j]
@@ -53,7 +49,7 @@ def compute_loss(G, corner_candidates):
             cos_angle = torch.dot(a, b) / (torch.norm(a) * torch.norm(b) + eps)
             loss += cos_angle**2
 
-    # [3] Candidate Proximity Loss
+    # Candidate Proximity Loss
     cand = torch.tensor(corner_candidates, dtype=torch.float32)
     G_flat = G.reshape(-1, 2)
     dists = torch.cdist(G_flat, cand)  # shape (16, N)
@@ -61,7 +57,6 @@ def compute_loss(G, corner_candidates):
     loss += torch.sum(min_dists**2) * 0.5  # weighting factor
 
     return loss
-
 
 def optimize_corners(corner_candidates, board_w, board_h):
     G = torch.nn.Parameter(initialize_grid(board_w, board_h, corner_candidates))
@@ -113,8 +108,11 @@ def detect_corners(iwe, board_w, board_h, quality=0.1, min_dist=10, vis=False):
         vis = draw_corner_candidates(iwe, corner_candidates, color=(0,0,255))
         cv2.imshow("Corner candidate", vis)
         cv2.waitKey(100)
+        vis = draw_corner_candidates(iwe, ip, color=(255,0,0))
+        cv2.imshow("Before Opt; contineous points", vis)
+        cv2.waitKey(100)
         vis = draw_corner_candidates(iwe, G_numpy, color=(255,0,0))
-        cv2.imshow("contineous points", vis)
+        cv2.imshow("After Opt; contineous points", vis)
         cv2.waitKey(100)
         vis = draw_corner_candidates(iwe, snapped)
         cv2.imshow("snapped", vis)
@@ -122,21 +120,20 @@ def detect_corners(iwe, board_w, board_h, quality=0.1, min_dist=10, vis=False):
     
     return snapped
 
-def check_grid_validity(grid: np.ndarray, spacing_tol=0.1, orth_tol=0.2):
+def is_corner_valid(grid: np.ndarray, spacing_tol=0.1, orth_tol=0.2):
     """
     grid: shape (4, 4, 2), dtype float32
     Returns True if structure is valid
     """
-
-    # 1. row spacing
+    # row spacing
     row_dists = np.linalg.norm(grid[:,1:] - grid[:,:-1], axis=2)  # (4,3)
     row_std = np.std(row_dists)
 
-    # 2. col spacing
+    # ol spacing
     col_dists = np.linalg.norm(grid[1:,:] - grid[:-1,:], axis=2)  # (3,4)
     col_std = np.std(col_dists)
 
-    # 3. orthogonality
+    # orthogonality
     orth_errors = []
     for i in range(3):
         for j in range(3):
@@ -153,54 +150,34 @@ def check_grid_validity(grid: np.ndarray, spacing_tol=0.1, orth_tol=0.2):
 
     return row_ok and col_ok and orth_ok
 
-def main():
-    p = argparse.ArgumentParser()
-    p.add_argument("image_dir", help="Folder of IWE images")
-    p.add_argument("--board_w", type=int, default=4)
-    p.add_argument("--board_h", type=int, default=4)
-    p.add_argument("--square_size", type=float, default=4.0)
-    args = p.parse_args()
-
-    # prepare 3D object points
-    objp = np.zeros((args.board_h*args.board_w, 3), np.float32)
-    objp[:,:2] = np.mgrid[0:args.board_w, 0:args.board_h].T.reshape(-1,2) * args.square_size
-
-    objpoints, imgpoints = [], []
-    image_size = None
-
-    files = sorted(glob.glob(os.path.join(args.image_dir, "*.*")))
-    print("Found {} files".format(len(files)))
-    
-    for fname in files:
-        iwe = cv2.imread(fname, cv2.IMREAD_UNCHANGED)
-        if iwe is None:
-            continue
-        if iwe.ndim == 3:
-            iwe = cv2.cvtColor(iwe, cv2.COLOR_BGR2GRAY)
-        if image_size is None:
-            h, w = iwe.shape
-            image_size = (w, h)
-
-        imgp = detect_corners(iwe, args.board_w, args.board_h, vis=True)
+def get_valid_corners(iwes, board_w, board_h, vis, is_user_selecting):
+    imgpoints = []
+    used_iwes = []
+    valid_count = 0
+    print("[INFO] Start corner detection process")
+    for iwe in iwes:
+        imgp = detect_corners(iwe, board_w, board_h, vis=vis)
         if imgp is None:
             continue
-        
-        valid_dir = os.path.join(args.image_dir, "valid")
-        os.makedirs(valid_dir, exist_ok=True)
-        if check_grid_validity(imgp):
-            vis = draw_corner_candidates(iwe, imgp)
-            cv2.imshow("Valid corner", vis)
+        if not is_corner_valid(imgp):
+            print(f"    [SKIPPED] Grid structure invalid")
+            continue
+        if is_user_selecting:
+            corner_checker = draw_corner_candidates(iwe, imgp)
+            print("Press 'y' to accpet this corner, and any keys to reject")
+            cv2.imshow("Corner checker", corner_checker)
             key = cv2.waitKey(0)
-            if key == ord('y'):  # y: yes, valid
-                print(f"[SAVED] {fname} accepted as valid.")
-                basename = os.path.basename(fname)
-                save_path = os.path.join(valid_dir, basename)
-                cv2.imwrite(save_path, iwe)
-            else:
-                print(f"[SKIPPED] {fname} rejected by user.")
-        else:
-            print(f"[INVALID] Grid structure too distorted in {fname}")
-    cv2.destroyAllWindows()
+            if key != ord('y'):
+                print(f"    [SKIPPED] User rejection")
+                continue
 
-if __name__ == "__main__":
-    main()
+        imgpoints.append(imgp.reshape(-1, 2).astype(np.float32))
+        used_iwes.append(iwe)
+        valid_count += 1
+        print(f"    [OK] Corners validated and added")
+    cv2.destroyAllWindows()
+    print("[INFO] Corner detection process is done!")
+    print(f"        #accepted: {valid_count}")
+    print("************************************************************")
+    
+    return used_iwes, imgpoints

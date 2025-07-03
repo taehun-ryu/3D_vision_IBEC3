@@ -1,8 +1,7 @@
 import numpy as np
 import scipy.optimize as opt
-from event_utils import *
-from objectives import *
-from warps import *
+from src.cmax import objectives
+from src.cmax import warps
 
 def optimize_contrast(xs, ys, ts, ps, warp_function, objective, optimizer=opt.fmin_bfgs, x0=None,
         numeric_grads=False, blur_sigma=None, img_size=(180, 240), init=None):

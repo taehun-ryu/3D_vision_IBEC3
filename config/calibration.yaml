@@ -1,0 +1,11 @@
+path: "/path/to/events.h5"
+img_size: [260, 346]
+board_w: 4
+board_h: 4
+square_size: 4.0
+user_selecting: false
+
+visualization:
+  iwe: false
+  corner: false
+  calib: true
