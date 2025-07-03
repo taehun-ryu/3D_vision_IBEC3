@@ -154,13 +154,14 @@ def get_valid_corners(iwes, board_w, board_h, vis, is_user_selecting):
     imgpoints = []
     used_iwes = []
     valid_count = 0
+    num = len(iwes)
     print("[INFO] Start corner detection process")
-    for iwe in iwes:
+    for i, iwe in enumerate(iwes):
         imgp = detect_corners(iwe, board_w, board_h, vis=vis)
         if imgp is None:
             continue
         if not is_corner_valid(imgp):
-            print(f"    [SKIPPED] Grid structure invalid")
+            print(f"    [SKIPPED] Grid structure invalid ({i}/{num})")
             continue
         if is_user_selecting:
             corner_checker = draw_corner_candidates(iwe, imgp)
@@ -168,13 +169,13 @@ def get_valid_corners(iwes, board_w, board_h, vis, is_user_selecting):
             cv2.imshow("Corner checker", corner_checker)
             key = cv2.waitKey(0)
             if key != ord('y'):
-                print(f"    [SKIPPED] User rejection")
+                print(f"    [SKIPPED] User rejection ({i}/{num})")
                 continue
 
         imgpoints.append(imgp.reshape(-1, 2).astype(np.float32))
         used_iwes.append(iwe)
         valid_count += 1
-        print(f"    [OK] Corners validated and added")
+        print(f"    [OK] Corners validated and added ({i}/{num})")
     if vis:
         cv2.destroyAllWindows()
     print("[INFO] Corner detection process is done!")

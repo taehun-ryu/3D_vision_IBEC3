@@ -59,8 +59,8 @@ class CalibrationViewer(QtWidgets.QTabWidget):
         ax1 = fig.add_subplot(121)
         ax2 = fig.add_subplot(122)
 
-        ax1.set_xlim(0, image_size[0])
-        ax1.set_ylim(image_size[1], 0)
+        ax1.set_xlim(0, image_size[1])
+        ax1.set_ylim(image_size[0], 0)
         ax1.set_aspect('equal')
         ax2.set_xlabel("error x (pix)")
         ax2.set_ylabel("error y (pix)")
