@@ -46,7 +46,7 @@ if __name__ == "__main__":
     print("[INFO] Splited into {} bins including {} events".format(len(coarse_bin), len(coarse_bin[0][0])))
     
     # Contrast Maximization
-    iwes = get_valid_iwes(coarse_bin[:50], img_size, vis_iwe)
+    iwes = get_valid_iwes(coarse_bin, img_size, vis_iwe)
     if len(iwes) == 0:
         raise RuntimeError("[ERROR] No valid images found. Corner detection aborted.")
     

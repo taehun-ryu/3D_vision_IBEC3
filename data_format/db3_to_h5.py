@@ -95,7 +95,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ROS2 .db3 → HDF5 (events only)")
     parser.add_argument("input", help="rosbag2 folder or .db3 file")
     parser.add_argument(
-        "output_dir", nargs="?", default=None,
+        "--output_dir", nargs="?", default=None,
         help="where to write *.h5 (default: same folder as each .db3)"
     )
     parser.add_argument("--topic",   default="/dvs/events", help="event topic name")
