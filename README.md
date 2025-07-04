@@ -34,21 +34,27 @@ python3 data_format/aedat_to_h5.py /root/dataset/checkerboard.aedat4 --output_di
 Edit [`config/calibration.yaml`](https://github.com/taehun-ryu/3D_vision_IBEC3/blob/main/config/calibration.yaml) to match your dataset and calibration setup:
 
 ```yaml
-path: "/path/to/events.h5"         # Path to input HDF5 event file
+path: "/path/to/events.h5"  # Path to input HDF5 event file
 
-img_size: [260, 346]               # Image size [height, width]
+img_size: [260, 346]        # Image size [height, width]
 
-board_w: 4                         # Number of inner corners along the checkerboard width
-board_h: 4                         # Number of inner corners along the checkerboard height
+board_w: 4                  # Number of inner corners along the checkerboard width
+board_h: 4                  # Number of inner corners along the checkerboard height
 
-square_size: 4.0                   # Size of one checker square (in mm or other real-world units)
+square_size: 4.0            # Size of one checker square (in mm or other real-world units)
 
-user_selecting: false             # If true, manually select corners; otherwise, auto-detect
+user_selecting: false       # If true, manually select corners; otherwise, auto-detect
 
-visualization:                    # Visualization options
-  iwe: false                      # Show IWE (Image of Warped Events)
-  corner: false                   # Show detected checkerboard corners
-  calib: true                     # Show calibration result (e.g., reprojection)
+visualization:              # Visualization options
+  iwe: false                # Show IWE (Image of Warped Events)
+  corner: false             # Show detected checkerboard corners
+  calib: true               # Show calibration result (e.g., reprojection)
+
+tolerance:                  # Filtering tolerances
+  ge: 1000000               # Minimum gradient energy threshold for acceptance
+  theta: 15                 # Angle tolerance (in degrees) to filter out pure linear motion (e.g., near 0/90/180/270°)
+  spacing: 0.15             # Maximum relative standard deviation allowed for row/column spacing (e.g., 0.15 = ±15%)
+  orth: 0.25                # Maximum allowed average orthogonality error (mean |cos(θ)|, ideal is 0 for right angles)
 ```
 
 Run the calibration:

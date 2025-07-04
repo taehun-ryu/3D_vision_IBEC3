@@ -1,11 +1,17 @@
 path: "/path/to/events.h5"
 img_size: [260, 346]
 board_w: 4
-board_h: 4
-square_size: 4.0
-user_selecting: false
+board_h: 5
+square_size: 3.5
+user_selecting: true
 
 visualization:
-  iwe: false
-  corner: false
+  iwe: true
+  corner: true
   calib: true
+
+tolerance:
+  ge: 1000000
+  theta: 15
+  spacing: 0.15
+  orth: 0.25

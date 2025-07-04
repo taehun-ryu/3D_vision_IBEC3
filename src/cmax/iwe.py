@@ -64,7 +64,7 @@ def is_near_angle(angle_deg, target_angles, tolerance):
         for ref in target_angles
     )
 
-def get_valid_iwes(coarse_bin, img_size, vis):
+def get_valid_iwes(coarse_bin, img_size, vis, tor_ge, tor_theta):
     # Optimization parameters
     objective = obj.r1_objective()
     warp = wf.linvel_warp()
@@ -86,7 +86,7 @@ def get_valid_iwes(coarse_bin, img_size, vis):
         print(f"        Optimized: vx = {argmax[0]:.2f}, vy = {argmax[1]:.2f}, theta(deg) = {theta_360:.2f}")
 
         # Filtering pure motion
-        if is_near_angle(theta_360, target_angles, 15):  #THINK we need to consider relative pose of checkerboard on image plane.
+        if is_near_angle(theta_360, target_angles, tor_theta):  #TODO we need to consider relative pose of checkerboard on image plane.
             print("         [SKIPED] One-direction edge")
             skipped_count+=1
             continue
@@ -104,7 +104,7 @@ def get_valid_iwes(coarse_bin, img_size, vis):
         iwe = cv2.normalize(iwe, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
         # Filtering based on Gradient Energy
-        if metric.evaluate(iwe) < 1000000:    #THINK Too heuristic?
+        if metric.evaluate(iwe) < tor_ge:    #THINK Too heuristic?
             print("         [SKIPED] Low Gradient Energy")
             skipped_count +=1
             continue
@@ -115,6 +115,7 @@ def get_valid_iwes(coarse_bin, img_size, vis):
             cv2.imshow("IWE", iwe)
             cv2.imshow("Unwarping", unwarp_img)
             cv2.waitKey(250)
+        print("         [ACCEPTED] IWE is valid!!!!!!!!!!")
         valid_count += 1
         iwes.append(iwe)
     if vis:

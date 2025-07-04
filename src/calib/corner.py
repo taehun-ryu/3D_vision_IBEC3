@@ -120,37 +120,51 @@ def detect_corners(iwe, board_w, board_h, quality=0.1, min_dist=10, vis=False):
 
     return snapped
 
-def is_corner_valid(grid: np.ndarray, spacing_tol=0.1, orth_tol=0.2):
+def is_corner_valid(grid: np.ndarray, tor_spacing, tor_orth) -> bool:
     """
-    grid: shape (4, 4, 2), dtype float32
-    Returns True if structure is valid
+    Check whether a grid of 2D points has regular spacing and near-orthogonal structure.
     """
-    # row spacing
-    row_dists = np.linalg.norm(grid[:,1:] - grid[:,:-1], axis=2)  # (4,3)
+    H, W, _ = grid.shape
+    if H < 2 or W < 2:
+        return False  # not enough points to check structure
+
+    # Row-wise spacing
+    row_dists = np.linalg.norm(grid[:, 1:] - grid[:, :-1], axis=2)  # (H, W-1)
     row_std = np.std(row_dists)
+    row_mean = np.mean(row_dists)
+    row_ok = (row_std / (row_mean + 1e-6)) < tor_spacing
+    if not row_ok:
+        print("     [WARNING] Row-wise spacing is unreliable")
 
-    # ol spacing
-    col_dists = np.linalg.norm(grid[1:,:] - grid[:-1,:], axis=2)  # (3,4)
+    # Column-wise spacing
+    col_dists = np.linalg.norm(grid[1:, :] - grid[:-1, :], axis=2)  # (H-1, W)
     col_std = np.std(col_dists)
+    col_mean = np.mean(col_dists)
+    col_ok = (col_std / (col_mean + 1e-6)) < tor_spacing
+    if not col_ok:
+        print("     [WARNING] Column-wise spacing is unreliable")
 
-    # orthogonality
+    # Orthogonality check (dot product of row and column vectors at internal corners)
     orth_errors = []
-    for i in range(3):
-        for j in range(3):
-            dx = grid[i, j+1] - grid[i, j]
-            dy = grid[i+1, j] - grid[i, j]
-            cos = np.dot(dx, dy) / (np.linalg.norm(dx) * np.linalg.norm(dy) + 1e-6)
-            orth_errors.append(abs(cos))  # ideal = 0
+    for i in range(H - 1):
+        for j in range(W - 1):
+            dx = grid[i, j + 1] - grid[i, j]
+            dy = grid[i + 1, j] - grid[i, j]
+            norm_dx = np.linalg.norm(dx)
+            norm_dy = np.linalg.norm(dy)
+            if norm_dx < 1e-6 or norm_dy < 1e-6:
+                continue  # skip degenerate
+            cos_angle = np.dot(dx, dy) / (norm_dx * norm_dy)
+            orth_errors.append(abs(cos_angle))  # 0 when orthogonal
 
-    orth_mean = np.mean(orth_errors)
-
-    row_ok = row_std / (np.mean(row_dists) + 1e-6) < spacing_tol
-    col_ok = col_std / (np.mean(col_dists) + 1e-6) < spacing_tol
-    orth_ok = orth_mean < orth_tol
+    orth_ok = np.mean(orth_errors) < tor_orth if orth_errors else False
+    if not col_ok:
+        print("     [WARNING] Orthogonality is unreliable")
 
     return row_ok and col_ok and orth_ok
 
-def get_valid_corners(iwes, board_w, board_h, vis, is_user_selecting):
+
+def get_valid_corners(iwes, board_w, board_h, vis, is_user_selecting, tor_spacing, tor_orth):
     imgpoints = []
     used_iwes = []
     valid_count = 0
@@ -160,7 +174,7 @@ def get_valid_corners(iwes, board_w, board_h, vis, is_user_selecting):
         imgp = detect_corners(iwe, board_w, board_h, vis=vis)
         if imgp is None:
             continue
-        if not is_corner_valid(imgp):
+        if not is_corner_valid(imgp, tor_spacing, tor_orth):
             print(f"    [SKIPPED] Grid structure invalid ({i}/{num})")
             continue
         if is_user_selecting:

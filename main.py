@@ -25,10 +25,15 @@ if __name__ == "__main__":
     board_w = cfg["board_w"]
     board_h = cfg["board_h"]
     square_size = cfg["square_size"]
-    vis_iwe    = cfg.get("visualization", {}).get("iwe")
-    vis_corner = cfg.get("visualization", {}).get("corner")
-    vis_calib  = cfg.get("visualization", {}).get("calib")
     is_user_selecting = cfg.get("user_selecting")
+    vis_iwe     = cfg.get("visualization", {}).get("iwe")
+    vis_corner  = cfg.get("visualization", {}).get("corner")
+    vis_calib   = cfg.get("visualization", {}).get("calib")
+    tor_ge      = cfg.get("tolerance", {}).get("ge")
+    tor_theta   = cfg.get("tolerance", {}).get("theta")
+    tor_spacing = cfg.get("tolerance", {}).get("spacing")
+    tor_orth    = cfg.get("tolerance", {}).get("orth")
+    
     print("[INFO] Starting calibration framework with")
     print("       H5 path:", path)
     print("       Image size:", img_size)
@@ -39,6 +44,11 @@ if __name__ == "__main__":
     print("               IWE: ", vis_iwe)
     print("               Corner: ", vis_corner)
     print("               Calibration: ", vis_calib)
+    print("       Tolerance")
+    print("               Gradient Energy (CM): ", tor_ge)
+    print("               Theta (CM): ", tor_theta)
+    print("               Spacing (Corner): ", tor_spacing)
+    print("               Orthogonallity (Corner): ", tor_orth)
 
     # Load event data
     xs, ys, ts, ps = read_h5_event_components(path)
@@ -49,12 +59,12 @@ if __name__ == "__main__":
     print("[INFO] Splited into {} bins including {} events".format(len(coarse_bin), len(coarse_bin[0][0])))
 
     # Contrast Maximization
-    iwes = get_valid_iwes(coarse_bin, img_size, vis_iwe)
+    iwes = get_valid_iwes(coarse_bin, img_size, vis_iwe, tor_ge, tor_theta)
     if len(iwes) == 0:
         raise RuntimeError("[ERROR] No valid images found. Corner detection aborted.")
 
     # Corner Detection
-    used_iwes, imgpoints = get_valid_corners(iwes, board_w, board_h, vis_corner, is_user_selecting)
+    used_iwes, imgpoints = get_valid_corners(iwes, board_w, board_h, vis_corner, is_user_selecting, tor_spacing, tor_orth)
     if len(imgpoints) == 0:
         raise RuntimeError("[ERROR] No valid corners found. Calibration aborted.")
 
