@@ -93,15 +93,17 @@ def snap_to_candidates(G_numpy, corner_candidates):
 
 def detect_corners(iwe, board_w, board_h, quality=0.1, min_dist=10, vis=False):
     gray = cv2.normalize(iwe, None, 0,255, cv2.NORM_MINMAX).astype(np.uint8)
-    max_corners =  2 * board_w * board_h
+    N = board_w * board_h
+    max_corners =  2 * N
     pts = cv2.goodFeaturesToTrack(gray, maxCorners=max_corners,
                                   qualityLevel=quality,
                                   minDistance=min_dist)
 
-    if pts is None or len(pts) < board_w * board_h:
+    if pts is None or len(pts) < N:
         return None
     corner_candidates = pts.reshape(-1,2).astype(np.float32)
-    ip = initialize_grid(board_w, board_h, corner_candidates)
+    top_features = corner_candidates[:N]
+    ip = initialize_grid(board_w, board_h, top_features)
     G_numpy = optimize_corners(corner_candidates, board_w=board_w, board_h=board_h)
     snapped = snap_to_candidates(G_numpy, corner_candidates)
     if vis:
